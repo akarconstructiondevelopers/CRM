@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nirmana Pro - Construction CRM & Site Management Suite</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN for financial visual charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+            },
+            slateCustom: {
+              850: '#151f32',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Print Specific Styling */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt;
+      }
+      .no-print, nav, aside, header, #modal-container, #toast, .action-buttons {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px 8px !important;
+      }
+      .card-print {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+      }
+    }
+    .print-only {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-amber-200">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md no-print border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Brand -->
+        <div class="flex items-center space-x-3">
+          <div class="bg-gradient-to-tr from-amber-600 to-amber-400 p-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-slate-900 font-black">
+            <i data-lucide="hard-hat" class="w-6 h-6 stroke-[2.5]"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-xl tracking-tight text-white">NIRMANA<span class="text-amber-400">PRO</span></span>
+              <span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-400/30 uppercase tracking-wider">Site CRM</span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">Construction, Civil & Contractor ERP</p>
+          </div>
+        </div>
+
+        <!-- Project Switcher & Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Active Project Selector -->
+          <div class="relative flex items-center">
+            <label for="project-switcher" class="sr-only">Select Active Project</label>
+            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 focus-within:ring-2 focus-within:ring-amber-400">
+              <i data-lucide="building-2" class="w-4 h-4 text-amber-400 mr-2 flex-shrink-0"></i>
+              <select id="project-switcher" onchange="app.switchProject(this.value)" class="bg-transparent text-sm font-semibold text-white focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[200px] truncate">
+                <!-- Dynamically Populated -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Backup / Save to Local Disk -->
+          <button onclick="app.exportDatabaseJSON()" title="Save / Backup Entire CRM to Computer Drive" class="hidden md:flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+            <i data-lucide="hard-drive-download" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Backup to Drive</span>
+          </button>
+
+          <!-- Restore / Import from Drive -->
+          <label title="Load CRM Database from File" class="hidden md:flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm cursor-pointer">
+            <i data-lucide="hard-drive-upload" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Import</span>
+            <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="app.importDatabaseJSON(event)">
+          </label>
+
+          <!-- Print / PDF Report Button -->
+          <button onclick="window.print()" class="flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md shadow-amber-500/20">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Print / PDF</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-slate-850 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8 overflow-x-auto">
+      <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 py-1.5 min-w-max">
+        <button onclick="app.setTab('dashboard')" id="tab-btn-dashboard" class="tab-btn active px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-white bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="app.setTab('projects')" id="tab-btn-projects" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+          <span>Projects Master</span>
+        </button>
+        <button onclick="app.setTab('materials')" id="tab-btn-materials" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="boxes" class="w-4 h-4"></i>
+          <span>Materials & Inventory</span>
+        </button>
+        <button onclick="app.setTab('labour')" id="tab-btn-labour" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="users-2" class="w-4 h-4"></i>
+          <span>Labour & Muster Roll</span>
+        </button>
+        <button onclick="app.setTab('expenses')" id="tab-btn-expenses" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="receipt" class="w-4 h-4"></i>
+          <span>Site Expenses / Cash</span>
+        </button>
+        <button onclick="app.setTab('billing')" id="tab-btn-billing" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+          <span>Client Billing & RA</span>
+        </button>
+        <button onclick="app.setTab('progress')" id="tab-btn-progress" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="check-square" class="w-4 h-4"></i>
+          <span>Milestones & DPR</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Print Letterhead (Only visible when printing) -->
+  <div class="print-only p-6 border-b border-slate-300 mb-6 bg-white">
+    <div class="flex justify-between items-start">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase">NIRMANA PRO CONSTRUCTION MANAGEMENT</h1>
+        <p class="text-xs text-slate-600 font-medium">Civil Engineering, Infrastructure & General Contracting</p>
+        <div id="print-project-details" class="mt-2 text-xs text-slate-700">
+          <!-- Dynamic Project info on print -->
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-slate-700">GENERATED REPORT</p>
+        <p id="print-report-date" class="text-xs text-slate-500 font-mono"></p>
+        <p class="text-[10px] text-slate-400 mt-1">Values strictly denominated in INR (₹)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Content Container -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="view-dashboard" class="tab-view space-y-6">
+      
+      <!-- Top Project Meta & Quick Status -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="dash-badge-status" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">Active</span>
+            <h2 id="dash-project-name" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Project Horizon</h2>
+          </div>
+          <p id="dash-project-meta" class="text-xs sm:text-sm text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            <span><i data-lucide="map-pin" class="w-3.5 h-3.5 inline mr-1 text-slate-400"></i><span id="dash-location">Sector 62, Noida</span></span>
+            <span><i data-lucide="user" class="w-3.5 h-3.5 inline mr-1 text-slate-400"></i>Client: <strong id="dash-client" class="text-slate-700">Apex Heights Pvt Ltd</strong></span>
+            <span><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-slate-400"></i>End: <span id="dash-deadline">30 Nov 2026</span></span>
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-xl text-right">
+            <span class="text-[11px] font-bold uppercase text-amber-800 block">Contract Value</span>
+            <span id="dash-contract-val" class="text-lg sm:text-xl font-black text-amber-700 font-mono tracking-tight">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Metric Cards (INR ₹) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Incurred Cost -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Spent</span>
+            <div class="p-2 rounded-xl bg-rose-50 text-rose-600">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div id="kpi-total-spent" class="text-2xl font-black text-slate-900 mt-2 font-mono tracking-tight">₹0</div>
+          <div class="mt-2 text-xs text-slate-500 flex justify-between">
+            <span>Material + Labour + Misc</span>
+            <span id="kpi-budget-percent" class="font-bold text-slate-700">0% of budget</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+            <div id="kpi-budget-bar" class="bg-rose-500 h-1.5 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Billed to Client -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Client Billed</span>
+            <div class="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div id="kpi-client-billed" class="text-2xl font-black text-slate-900 mt-2 font-mono tracking-tight">₹0</div>
+          <div class="mt-2 text-xs text-slate-500 flex justify-between">
+            <span>Net Collected:</span>
+            <span id="kpi-client-received" class="font-bold text-emerald-600">₹0</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+            <div id="kpi-received-bar" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Outstanding Dues / Receivables -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Client Outstanding</span>
+            <div class="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div id="kpi-outstanding" class="text-2xl font-black text-amber-600 mt-2 font-mono tracking-tight">₹0</div>
+          <div class="mt-2 text-xs text-slate-500">
+            Pending milestone clearance & retainage
+          </div>
+        </div>
+
+        <!-- Vendor & Labour Payable Dues -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Payables Pending</span>
+            <div class="p-2 rounded-xl bg-purple-50 text-purple-600">
+              <i data-lucide="wallet-cards" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div id="kpi-vendor-dues" class="text-2xl font-black text-purple-700 mt-2 font-mono tracking-tight">₹0</div>
+          <div class="mt-2 text-xs text-slate-500">
+            Pending Material bills + Labour muster dues
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Visual Charts & Progress Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Expense Breakdown Chart -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Cost Distribution (₹)</h3>
+              <p class="text-xs text-slate-500">Material Procurement vs Labour Wages vs Site Machinery & Overheads</p>
+            </div>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-mono">Current Site</span>
+          </div>
+          <div class="relative h-64 w-full flex items-center justify-center">
+            <canvas id="expensesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Site Quick Metrics & Stage Progress -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-900 text-base mb-1">Site Progress Health</h3>
+            <p class="text-xs text-slate-500 mb-4">Milestone execution & resource count</p>
+            
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                  <span class="text-slate-700">Overall Construction Progress</span>
+                  <span id="dash-progress-percentage" class="text-amber-600 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
+                  <div id="dash-progress-bar-fill" class="bg-gradient-to-r from-amber-500 to-amber-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <span class="text-[11px] font-medium text-slate-500 block">Active Workforce</span>
+                  <span id="dash-labour-count" class="text-xl font-black text-slate-800">0</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">Persons logged</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <span class="text-[11px] font-medium text-slate-500 block">Pending Bills</span>
+                  <span id="dash-pending-invoices" class="text-xl font-black text-amber-600">0</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">Need clearance</span>
+                </div>
+              </div>
+
+              <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80">
+                <div class="flex items-center space-x-2 text-amber-800 font-bold text-xs">
+                  <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i>
+                  <span>Quick Action Recommendation</span>
+                </div>
+                <p id="dash-recommendation" class="text-xs text-amber-900/80 mt-1 leading-relaxed">
+                  Everything looks balanced. Make sure all delivery challans are cross-verified with physical stock before marking as paid.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex gap-2">
+            <button onclick="app.setTab('materials')" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold py-2 px-3 rounded-lg text-center transition">
+              + Material Entry
+            </button>
+            <button onclick="app.setTab('labour')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold py-2 px-3 rounded-lg text-center transition">
+              + Muster Roll
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: PROJECTS MASTER -->
+    <section id="view-projects" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Project Master Repository</h2>
+          <p class="text-xs text-slate-500">Manage multiple construction sites, client contracts, and overall values</p>
+        </div>
+        <button onclick="app.openModal('modal-project')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add New Project</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Project Name</th>
+                <th class="p-3.5">Client</th>
+                <th class="p-3.5">Site Location</th>
+                <th class="p-3.5">Contract Value (INR)</th>
+                <th class="p-3.5">Dates (Start - End)</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="projects-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MATERIALS & INVENTORY -->
+    <section id="view-materials" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Materials Procurement & Stock Inward</h2>
+          <p class="text-xs text-slate-500">Track Cement, TMT Steel, Aggregates, Sand, Bricks, Tiles & Invoices</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="app.exportTableToCSV('materials')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition no-print border border-slate-300">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="app.openModal('modal-material')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add Material Order</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Total Material Orders:</span>
+          <span id="mat-total-count" class="text-base font-bold text-slate-800">0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Total Material Cost:</span>
+          <span id="mat-total-cost" class="text-base font-bold text-slate-900 font-mono">₹0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Vendor Paid:</span>
+          <span id="mat-paid-cost" class="text-base font-bold text-emerald-600 font-mono">₹0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Vendor Unpaid Dues:</span>
+          <span id="mat-unpaid-cost" class="text-base font-bold text-rose-600 font-mono">₹0</span>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Material & Category</th>
+                <th class="p-3.5">Supplier / Vendor</th>
+                <th class="p-3.5">Challan / Bill No</th>
+                <th class="p-3.5">Quantity & Unit</th>
+                <th class="p-3.5">Rate (₹)</th>
+                <th class="p-3.5">Total Amount (₹)</th>
+                <th class="p-3.5">Payment</th>
+                <th class="p-3.5">Date</th>
+                <th class="p-3.5 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="materials-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: LABOUR & MUSTER ROLL -->
+    <section id="view-labour" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Daily Labour Master & Subcontractor Wage Roll</h2>
+          <p class="text-xs text-slate-500">Track Masons, Barbenders, Carpenters, Helpers, Daily Wages & Advances</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="app.exportTableToCSV('labour')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition no-print border border-slate-300">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="app.openModal('modal-labour')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add Labour / Contractor</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Total Workers:</span>
+          <span id="labour-total-workers" class="text-base font-bold text-slate-800">0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Total Wage Value:</span>
+          <span id="labour-gross-wages" class="text-base font-bold text-slate-900 font-mono">₹0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Advance Disbursed:</span>
+          <span id="labour-total-advance" class="text-base font-bold text-amber-600 font-mono">₹0</span>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Net Balance Payable:</span>
+          <span id="labour-net-payable" class="text-base font-bold text-rose-600 font-mono">₹0</span>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Worker / Contractor</th>
+                <th class="p-3.5">Trade / Skill Category</th>
+                <th class="p-3.5">Daily Wage (₹)</th>
+                <th class="p-3.5">Days Worked</th>
+                <th class="p-3.5">Total Wage (₹)</th>
+                <th class="p-3.5">Advance Paid (₹)</th>
+                <th class="p-3.5">Net Payable (₹)</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="labour-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SITE EXPENSES & CASHBOOK -->
+    <section id="view-expenses" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Site Petty Cash, Equipment & Miscellaneous Expenses</h2>
+          <p class="text-xs text-slate-500">Fuel for DG sets/JCB, machinery rent, council permits, safety gear & tea</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="app.exportTableToCSV('expenses')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition no-print border border-slate-300">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="app.openModal('modal-expense')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Record Site Expense</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Date</th>
+                <th class="p-3.5">Category</th>
+                <th class="p-3.5">Description / Paid For</th>
+                <th class="p-3.5">Paid To</th>
+                <th class="p-3.5">Payment Mode</th>
+                <th class="p-3.5">Voucher / Receipt No</th>
+                <th class="p-3.5 font-mono">Amount (₹)</th>
+                <th class="p-3.5 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Dynamically Populated -->
+            </tbody>
+            <tfoot class="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+              <tr>
+                <td colspan="6" class="p-3.5 text-right">Total Site Expenses:</td>
+                <td id="expense-sum-total" class="p-3.5 font-mono text-sm text-slate-900">₹0</td>
+                <td class="no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: CLIENT BILLING & RA INVOICES -->
+    <section id="view-billing" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Client RA Bills & Milestone Invoicing</h2>
+          <p class="text-xs text-slate-500">Run Running Account (RA) bills, GST calculation, retention money & TDS</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="app.exportTableToCSV('billing')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition no-print border border-slate-300">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="app.openModal('modal-bill')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Generate RA Bill</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Billing Metrics -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Total Certified Billed:</span>
+          <span id="bill-total-gross" class="text-xl font-black text-slate-900 font-mono mt-1 block">₹0</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Amount Received (Net):</span>
+          <span id="bill-total-received" class="text-xl font-black text-emerald-600 font-mono mt-1 block">₹0</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-slate-500 block">Retention & Client Balance:</span>
+          <span id="bill-total-due" class="text-xl font-black text-amber-600 font-mono mt-1 block">₹0</span>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Bill # / Milestone</th>
+                <th class="p-3.5">Bill Date</th>
+                <th class="p-3.5 font-mono">Basic Amount (₹)</th>
+                <th class="p-3.5">GST (%)</th>
+                <th class="p-3.5">Retention (%)</th>
+                <th class="p-3.5 font-mono">Net Billed (₹)</th>
+                <th class="p-3.5 font-mono">Received (₹)</th>
+                <th class="p-3.5 font-mono">Balance (₹)</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="billing-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: MILESTONES & SITE PROGRESS (DPR) -->
+    <section id="view-progress" class="tab-view hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Civil Stages & Daily Progress Report (DPR)</h2>
+          <p class="text-xs text-slate-500">Track foundation, casting, structural masonry, plumbing, electrical & finishing</p>
+        </div>
+        <button onclick="app.openModal('modal-task')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add Construction Milestone</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tasks-cards-container">
+        <!-- Dynamically Populated Cards with percentage slider -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 text-slate-500 text-xs py-4 px-6 no-print mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Auto-Save active (Local Computer Storage). No cloud login required.</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span>Currency: <strong class="text-slate-800 font-mono">INR (₹)</strong></span>
+        <button onclick="app.exportDatabaseJSON()" class="text-amber-700 hover:underline font-semibold">Download Backup</button>
+        <button onclick="app.resetDemoDataPrompt()" class="text-rose-600 hover:underline">Reset Sample Data</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL CONTAINER (Single container reused dynamically) -->
+  <div id="modal-container" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    
+    <!-- Modal 1: Project Master Form -->
+    <div id="modal-project" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-project-title" class="font-bold text-slate-900 text-base">New Construction Project</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveProject(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="proj-form-id">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Project / Site Name *</label>
+          <input type="text" id="proj-form-name" required placeholder="e.g. Royal Palm Villas Phase 2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Client Name *</label>
+            <input type="text" id="proj-form-client" required placeholder="e.g. Acme Infra Corp" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Site Location *</label>
+            <input type="text" id="proj-form-location" required placeholder="e.g. Whitefield, Bengaluru" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Total Contract Value (₹) *</label>
+            <input type="number" id="proj-form-budget" required min="0" step="1000" placeholder="e.g. 5000000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Project Status</label>
+            <select id="proj-form-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Active">Active</option>
+              <option value="Planning">Planning</option>
+              <option value="On-Hold">On-Hold</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Commencement Date</label>
+            <input type="date" id="proj-form-start" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Target Completion Date</label>
+            <input type="date" id="proj-form-end" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Remarks & Specifications</label>
+          <textarea id="proj-form-notes" rows="2" placeholder="Structure type, G+4 residential, RMC M25 spec..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Project</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 2: Material & Procurement Form -->
+    <div id="modal-material" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-material-title" class="font-bold text-slate-900 text-base">Material Procurement Record</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveMaterial(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="mat-form-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Material Name *</label>
+            <input type="text" id="mat-form-name" required placeholder="e.g. UltraTech Cement OPC 53" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Category</label>
+            <select id="mat-form-category" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Cement">Cement</option>
+              <option value="Steel (TMT)">Steel (TMT)</option>
+              <option value="Aggregates & Sand">Aggregates & Sand</option>
+              <option value="Bricks & AAC Blocks">Bricks & AAC Blocks</option>
+              <option value="RMC Concrete">RMC Concrete</option>
+              <option value="Tiles & Granite">Tiles & Granite</option>
+              <option value="Plumbing / Electrical">Plumbing / Electrical</option>
+              <option value="Wood & Shuttering">Wood & Shuttering</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Supplier / Vendor *</label>
+            <input type="text" id="mat-form-vendor" required placeholder="e.g. Balaji Building Materials" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Challan / Bill No</label>
+            <input type="text" id="mat-form-bill" placeholder="e.g. DC-9842" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Quantity *</label>
+            <input type="number" id="mat-form-qty" oninput="app.calcMatTotal()" required min="0.01" step="any" placeholder="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Unit *</label>
+            <select id="mat-form-unit" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Bags">Bags</option>
+              <option value="MT / Ton">MT / Ton</option>
+              <option value="Brass">Brass</option>
+              <option value="CFT">CFT</option>
+              <option value="Sq.Ft">Sq.Ft</option>
+              <option value="Nos">Nos</option>
+              <option value="Kg">Kg</option>
+              <option value="Litres">Litres</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Rate per Unit (₹) *</label>
+            <input type="number" id="mat-form-rate" oninput="app.calcMatTotal()" required min="0" step="any" placeholder="380" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Total Cost (₹)</label>
+            <input type="number" id="mat-form-total" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg font-mono font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Payment Status</label>
+            <select id="mat-form-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Partial">Partial</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Delivery / Purchase Date</label>
+          <input type="date" id="mat-form-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Material</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 3: Labour & Muster Form -->
+    <div id="modal-labour" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-labour-title" class="font-bold text-slate-900 text-base">Labourer / Subcontractor Entry</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveLabour(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="labour-form-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Worker or Mukadam Name *</label>
+            <input type="text" id="labour-form-name" required placeholder="e.g. Ramesh Mistri / Gang" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Trade / Skill Category</label>
+            <select id="labour-form-role" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Mason (Raj Mistri)">Mason (Raj Mistri)</option>
+              <option value="Barbender (Steel)">Barbender (Steel)</option>
+              <option value="Carpenter (Shuttering)">Carpenter (Shuttering)</option>
+              <option value="Labour (Beldar/Kuli)">Labour (Beldar/Kuli)</option>
+              <option value="Electrician">Electrician</option>
+              <option value="Plumber">Plumber</option>
+              <option value="Painter">Painter</option>
+              <option value="Tile Fitter">Tile Fitter</option>
+              <option value="Subcontractor">Subcontractor</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Daily Wage Rate (₹) *</label>
+            <input type="number" id="labour-form-rate" oninput="app.calcLabourNet()" required min="0" step="10" placeholder="850" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Days / Shifts *</label>
+            <input type="number" id="labour-form-days" oninput="app.calcLabourNet()" required min="0.5" step="0.5" placeholder="7" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Advance Paid (₹)</label>
+            <input type="number" id="labour-form-advance" oninput="app.calcLabourNet()" min="0" step="50" placeholder="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Total Wage Due (₹)</label>
+            <input type="number" id="labour-form-total" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg font-mono font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Net Balance Payable (₹)</label>
+            <input type="number" id="labour-form-balance" readonly class="w-full px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg font-mono font-black text-amber-700">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Payment Status</label>
+            <select id="labour-form-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Paid">Fully Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Advance Only">Advance Only</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Week Ending Date</label>
+            <input type="date" id="labour-form-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Muster Entry</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 4: Expense Record Form -->
+    <div id="modal-expense" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-expense-title" class="font-bold text-slate-900 text-base">Record Site Expense</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveExpense(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="exp-form-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Expense Category *</label>
+            <select id="exp-form-category" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Fuel & Generator (DG)">Fuel & Generator (DG)</option>
+              <option value="Machinery / JCB Hire">Machinery / JCB Hire</option>
+              <option value="Safety Gear (PPE)">Safety Gear (PPE)</option>
+              <option value="Site Office & Petty Cash">Site Office & Petty Cash</option>
+              <option value="Municipal / Electricity">Municipal / Electricity</option>
+              <option value="Transportation & Freight">Transportation & Freight</option>
+              <option value="Testing & Quality Control">Testing & Quality Control</option>
+              <option value="Other Misc">Other Misc</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Amount (₹) *</label>
+            <input type="number" id="exp-form-amount" required min="1" step="1" placeholder="4500" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Particulars / Description *</label>
+          <input type="text" id="exp-form-desc" required placeholder="e.g. 50L Diesel for Concrete Mixer & Crane" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Paid To *</label>
+            <input type="text" id="exp-form-paidto" required placeholder="e.g. Bharat Petroleum" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Payment Mode</label>
+            <select id="exp-form-mode" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Cash / Petty Cash">Cash / Petty Cash</option>
+              <option value="UPI / GPay">UPI / GPay</option>
+              <option value="NEFT / RTGS">NEFT / RTGS</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Voucher / Receipt No</label>
+            <input type="text" id="exp-form-voucher" placeholder="e.g. V-102" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Date</label>
+            <input type="date" id="exp-form-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Expense</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 5: Client Bill / RA Bill Form -->
+    <div id="modal-bill" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-bill-title" class="font-bold text-slate-900 text-base">Generate RA / Milestone Bill</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveBill(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="bill-form-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Bill / Invoice No *</label>
+            <input type="text" id="bill-form-number" required placeholder="e.g. RA-BILL-03" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Milestone Description *</label>
+            <input type="text" id="bill-form-title" required placeholder="e.g. 2nd Floor Slab Casting Done" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Base Amount (₹) *</label>
+            <input type="number" id="bill-form-basic" oninput="app.calcBillNet()" required min="1" step="1000" placeholder="500000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">GST Rate (%)</label>
+            <select id="bill-form-gst" onchange="app.calcBillNet()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-mono">
+              <option value="18">18% (Standard Civil)</option>
+              <option value="12">12% (Govt / Affordable)</option>
+              <option value="5">5%</option>
+              <option value="0">0% (Exempt)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Retention Hold (%)</label>
+            <select id="bill-form-retention" onchange="app.calcBillNet()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-mono">
+              <option value="5">5% Retention</option>
+              <option value="10">10% Retention</option>
+              <option value="0">0% None</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Total Bill (with GST) (₹)</label>
+            <input type="number" id="bill-form-gross" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg font-mono font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Received (₹)</label>
+            <input type="number" id="bill-form-received" oninput="app.calcBillNet()" min="0" step="1000" placeholder="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Pending Balance (₹)</label>
+            <input type="number" id="bill-form-balance" readonly class="w-full px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg font-mono font-bold text-amber-700">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Bill Date</label>
+            <input type="date" id="bill-form-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status</label>
+            <select id="bill-form-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="Pending">Pending Payment</option>
+              <option value="Partially Paid">Partially Paid</option>
+              <option value="Cleared">Fully Cleared</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Bill</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 6: Milestone & Task Form -->
+    <div id="modal-task" class="modal-box hidden bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modal-task-title" class="font-bold text-slate-900 text-base">Construction Phase / Milestone</h3>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="app.handleSaveTask(event)" class="space-y-4 mt-4 text-xs">
+        <input type="hidden" id="task-form-id">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Stage / Milestone Name *</label>
+          <input type="text" id="task-form-name" required placeholder="e.g. Sub-structure Excavation & PCC" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Target Completion Date</label>
+            <input type="date" id="task-form-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status</label>
+            <select id="task-form-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="In-Progress">In-Progress</option>
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+              <option value="Delayed">Delayed</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Progress: <span id="task-form-slider-val" class="text-amber-600 font-bold">50%</span></label>
+          <input type="range" id="task-form-pct" min="0" max="100" value="50" oninput="document.getElementById('task-form-slider-val').innerText = this.value + '%'" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Engineer / Site Supervisor Notes</label>
+          <textarea id="task-form-notes" rows="2" placeholder="Quality cube test passed, steel binding inspected..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="app.closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition">Save Milestone</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 ease-out flex items-center space-x-2 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold"></div>
+
+  <script>
+    /**
+     * Nirmana Pro Construction CRM Single-Page Core Controller
+     * Strictly localized in Indian Rupee (INR ₹)
+     */
+    const STORAGE_KEY = 'NIRMANA_PRO_CONSTRUCTION_CRM_DB';
+
+    const defaultInitialData = {
+      activeProjectId: 'proj-001',
+      projects: [
+        {
+          id: 'proj-001',
+          name: 'Silver Heights Towers (Tower A & B)',
+          client: 'Shree Balaji Developers',
+          location: 'Sector 45, Gurugram, Haryana',
+          budget: 18500000, // ₹1.85 Cr
+          status: 'Active',
+          startDate: '2026-01-15',
+          endDate: '2027-04-30',
+          notes: 'High-rise residential project. Foundation deep piling and RMC casting ongoing.'
+        },
+        {
+          id: 'proj-002',
+          name: 'Greenwood Luxury Bungalow',
+          client: 'Dr. Anand Verma',
+          location: 'Koramangala, Bengaluru, Karnataka',
+          budget: 4500000, // ₹45 Lakhs
+          status: 'Planning',
+          startDate: '2026-03-01',
+          endDate: '2026-11-20',
+          notes: 'Custom architect-designed G+2 Villa.'
+        }
+      ],
+      materials: [
+        {
+          id: 'mat-001',
+          projectId: 'proj-001',
+          name: 'OPC 53 Grade Cement',
+          category: 'Cement',
+          vendor: 'Shree Cement Agency',
+          bill: 'CH-1092',
+          qty: 600,
+          unit: 'Bags',
+          rate: 395,
+          total: 237000,
+          status: 'Paid',
+          date: '2026-08-10'
+        },
+        {
+          id: 'mat-002',
+          projectId: 'proj-001',
+          name: 'Fe 550D TMT Rebar (12mm & 16mm)',
+          category: 'Steel (TMT)',
+          vendor: 'Tata Tiscon Distributors',
+          bill: 'TT-7741',
+          qty: 12.5,
+          unit: 'MT / Ton',
+          rate: 64500,
+          total: 806250,
+          status: 'Pending',
+          date: '2026-08-15'
+        },
+        {
+          id: 'mat-003',
+          projectId: 'proj-001',
+          name: 'Coarse River Sand (Screened)',
+          category: 'Aggregates & Sand',
+          vendor: 'Yamuna Sands & Co',
+          bill: 'YS-34',
+          qty: 4,
+          unit: 'Brass',
+          rate: 9500,
+          total: 38000,
+          status: 'Paid',
+          date: '2026-08-20'
+        },
+        {
+          id: 'mat-004',
+          projectId: 'proj-001',
+          name: 'Ready Mix Concrete M25',
+          category: 'RMC Concrete',
+          vendor: 'ACC RMC Batching Plant',
+          bill: 'RMC-882',
+          qty: 45,
+          unit: 'CFT',
+          rate: 4600,
+          total: 207000,
+          status: 'Pending',
+          date: '2026-09-02'
+        }
+      ],
+      labour: [
+        {
+          id: 'lab-001',
+          projectId: 'proj-001',
+          name: 'Raju Mistri (Brickwork Gang)',
+          role: 'Mason (Raj Mistri)',
+          rate: 950,
+          days: 14,
+          advance: 3000,
+          total: 13300,
+          net: 10300,
+          status: 'Advance Only',
+          date: '2026-09-05'
+        },
+        {
+          id: 'lab-002',
+          projectId: 'proj-001',
+          name: 'Mohan & Team (Steel Binding)',
+          role: 'Barbender (Steel)',
+          rate: 850,
+          days: 20,
+          advance: 5000,
+          total: 17000,
+          net: 12000,
+          status: 'Pending',
+          date: '2026-09-05'
+        },
+        {
+          id: 'lab-003',
+          projectId: 'proj-001',
+          name: 'Ganesh Shuttering Works',
+          role: 'Carpenter (Shuttering)',
+          rate: 900,
+          days: 12,
+          advance: 10800,
+          total: 10800,
+          net: 0,
+          status: 'Paid',
+          date: '2026-09-01'
+        }
+      ],
+      expenses: [
+        {
+          id: 'exp-001',
+          projectId: 'proj-001',
+          category: 'Machinery / JCB Hire',
+          desc: '16 hours basement soil grading and rock clearing',
+          paidTo: 'Mahaveer Earthmovers',
+          mode: 'UPI / GPay',
+          voucher: 'JCB-44',
+          amount: 28800,
+          date: '2026-08-12'
+        },
+        {
+          id: 'exp-002',
+          projectId: 'proj-001',
+          category: 'Fuel & Generator (DG)',
+          desc: '120 Litres HSD Diesel for site de-watering pumps',
+          paidTo: 'Indian Oil Depot',
+          mode: 'Cash / Petty Cash',
+          voucher: 'V-091',
+          amount: 11400,
+          date: '2026-08-25'
+        },
+        {
+          id: 'exp-003',
+          projectId: 'proj-001',
+          category: 'Testing & Quality Control',
+          desc: 'Concrete 7-day & 28-day cube compressive strength test',
+          paidTo: 'Civil Quality Lab NABL',
+          mode: 'NEFT / RTGS',
+          voucher: 'LAB-55',
+          amount: 6500,
+          date: '2026-09-04'
+        }
+      ],
+      billing: [
+        {
+          id: 'bill-001',
+          projectId: 'proj-001',
+          number: 'RA-01',
+          title: 'Mobilization & Piling Milestone Certified',
+          basic: 1500000,
+          gstRate: 18,
+          retentionRate: 5,
+          gross: 1695000, // (1500000 + 18% GST - 5% retention)
+          received: 1695000,
+          balance: 0,
+          status: 'Cleared',
+          date: '2026-07-28'
+        },
+        {
+          id: 'bill-002',
+          projectId: 'proj-001',
+          number: 'RA-02',
+          title: 'Basement Raft Foundation Casting Completion',
+          basic: 2200000,
+          gstRate: 18,
+          retentionRate: 5,
+          gross: 2486000,
+          received: 1500000,
+          balance: 986000,
+          status: 'Partially Paid',
+          date: '2026-08-30'
+        }
+      ],
+      tasks: [
+        {
+          id: 'tsk-001',
+          projectId: 'proj-001',
+          name: 'Site Clearance & Soil Excavation',
+          date: '2026-02-15',
+          progress: 100,
+          status: 'Completed',
+          notes: 'Completed ahead of schedule. Hard rock excavation encountered.'
+        },
+        {
+          id: 'tsk-002',
+          projectId: 'proj-001',
+          name: 'Raft Foundation & Water-Proofing',
+          date: '2026-05-30',
+          progress: 100,
+          status: 'Completed',
+          notes: 'Cube test 28-day target 31.5 N/mm2 achieved.'
+        },
+        {
+          id: 'tsk-003',
+          projectId: 'proj-001',
+          name: 'Stilt Parking & Podium Slab Casting',
+          date: '2026-09-25',
+          progress: 85,
+          status: 'In-Progress',
+          notes: 'Shuttering de-staging on 14th day. Columns reinforcement ongoing.'
+        },
+        {
+          id: 'tsk-004',
+          projectId: 'proj-001',
+          name: 'Tower A: 1st to 4th Floor RCC Frame',
+          date: '2026-12-10',
+          progress: 25,
+          status: 'In-Progress',
+          notes: 'Beam bottom alignment verified with auto-level instrument.'
+        }
+      ]
+    };
+
+    const app = {
+      db: null,
+      currentTab: 'dashboard',
+      chartInstance: null,
+
+      init() {
+        this.loadDatabase();
+        this.populateProjectDropdown();
+        this.renderAll();
+        lucide.createIcons();
+      },
+
+      loadDatabase() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            this.db = JSON.parse(raw);
+          } else {
+            this.db = JSON.parse(JSON.stringify(defaultInitialData));
+            this.saveToStorage();
+          }
+        } catch (e) {
+          console.error('Error reading localStorage', e);
+          this.db = JSON.parse(JSON.stringify(defaultInitialData));
+        }
+
+        // Verify active project exists
+        const exists = this.db.projects.some(p => p.id === this.db.activeProjectId);
+        if (!exists && this.db.projects.length > 0) {
+          this.db.activeProjectId = this.db.projects[0].id;
+        }
+      },
+
+      saveToStorage() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+        } catch (e) {
+          this.showToast('Storage Limit exceeded or write failed', 'error');
+        }
+      },
+
+      getActiveProject() {
+        return this.db.projects.find(p => p.id === this.db.activeProjectId) || this.db.projects[0];
+      },
+
+      // Formats numbers strictly in Indian Lakhs/Crores numbering format
+      formatINR(amount) {
+        const val = Number(amount) || 0;
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0
+        }).format(val);
+      },
+
+      switchProject(projId) {
+        this.db.activeProjectId = projId;
+        this.saveToStorage();
+        this.renderAll();
+        this.showToast(`Switched to: ${this.getActiveProject().name}`);
+      },
+
+      populateProjectDropdown() {
+        const sel = document.getElementById('project-switcher');
+        sel.innerHTML = '';
+        this.db.projects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.name;
+          if (p.id === this.db.activeProjectId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      },
+
+      setTab(tabName) {
+        this.currentTab = tabName;
+        document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.classList.remove('bg-amber-500/20', 'text-amber-300', 'border-amber-500/30');
+          btn.classList.add('text-slate-400');
+        });
+
+        const activeView = document.getElementById(`view-${tabName}`);
+        const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+        if (activeView) activeView.classList.remove('hidden');
+        if (activeBtn) {
+          activeBtn.classList.remove('text-slate-400');
+          activeBtn.classList.add('bg-amber-500/20', 'text-amber-300', 'border', 'border-amber-500/30');
+        }
+
+        if (tabName === 'dashboard') {
+          this.renderDashboard();
+        }
+
+        lucide.createIcons();
+      },
+
+      renderDashboard() {
+        const p = this.getActiveProject();
+        if (!p) return;
+
+        // Header Meta
+        document.getElementById('dash-project-name').textContent = p.name;
+        document.getElementById('dash-location').textContent = p.location;
+        document.getElementById('dash-client').textContent = p.client;
+        document.getElementById('dash-deadline').textContent = p.endDate ? new Date(p.endDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : 'Ongoing';
+        document.getElementById('dash-contract-val').textContent = this.formatINR(p.budget);
+        
+        const badge = document.getElementById('dash-badge-status');
+        badge.textContent = p.status;
+        badge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+          p.status === 'Active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+          p.status === 'Planning' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+          'bg-slate-100 text-slate-800 border border-slate-200'
+        }`;
+
+        // Aggregations for Active Project
+        const projMats = this.db.materials.filter(m => m.projectId === p.id);
+        const projLabs = this.db.labour.filter(l => l.projectId === p.id);
+        const projExps = this.db.expenses.filter(e => e.projectId === p.id);
+        const projBills = this.db.billing.filter(b => b.projectId === p.id);
+        const projTasks = this.db.tasks.filter(t => t.projectId === p.id);
+
+        const totalMatCost = projMats.reduce((acc, m) => acc + (Number(m.total) || 0), 0);
+        const totalLabCost = projLabs.reduce((acc, l) => acc + (Number(l.total) || 0), 0);
+        const totalExpCost = projExps.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+        const totalSpent = totalMatCost + totalLabCost + totalExpCost;
+
+        const totalBilled = projBills.reduce((acc, b) => acc + (Number(b.gross) || 0), 0);
+        const totalReceived = projBills.reduce((acc, b) => acc + (Number(b.received) || 0), 0);
+        const totalOutstanding = Math.max(0, totalBilled - totalReceived);
+
+        // Payables: Unpaid materials + Unpaid labour wages
+        const unpaidMat = projMats.filter(m => m.status !== 'Paid').reduce((acc, m) => acc + (Number(m.total) || 0), 0);
+        const unpaidLab = projLabs.reduce((acc, l) => acc + (Number(l.net) || 0), 0);
+        const totalPayableDues = unpaidMat + unpaidLab;
+
+        // KPI UI Elements
+        document.getElementById('kpi-total-spent').textContent = this.formatINR(totalSpent);
+        const budgetPct = p.budget > 0 ? Math.min(100, Math.round((totalSpent / p.budget) * 100)) : 0;
+        document.getElementById('kpi-budget-percent').textContent = `${budgetPct}% of budget`;
+        document.getElementById('kpi-budget-bar').style.width = `${budgetPct}%`;
+
+        document.getElementById('kpi-client-billed').textContent = this.formatINR(totalBilled);
+        document.getElementById('kpi-client-received').textContent = this.formatINR(totalReceived);
+        const recPct = totalBilled > 0 ? Math.min(100, Math.round((totalReceived / totalBilled) * 100)) : 0;
+        document.getElementById('kpi-received-bar').style.width = `${recPct}%`;
+
+        document.getElementById('kpi-outstanding').textContent = this.formatINR(totalOutstanding);
+        document.getElementById('kpi-vendor-dues').textContent = this.formatINR(totalPayableDues);
+
+        // Labour & Milestone count
+        document.getElementById('dash-labour-count').textContent = projLabs.length;
+        const pendingCount = projMats.filter(m => m.status !== 'Paid').length + projBills.filter(b => b.status !== 'Cleared').length;
+        document.getElementById('dash-pending-invoices').textContent = pendingCount;
+
+        // Calculate Project Stage Progress Average
+        let avgProgress = 0;
+        if (projTasks.length > 0) {
+          const sum = projTasks.reduce((acc, t) => acc + (Number(t.progress) || 0), 0);
+          avgProgress = Math.round(sum / projTasks.length);
+        }
+        document.getElementById('dash-progress-percentage').textContent = `${avgProgress}%`;
+        document.getElementById('dash-progress-bar-fill').style.width = `${avgProgress}%`;
+
+        // Recommendation Text
+        const recEl = document.getElementById('dash-recommendation');
+        if (totalSpent > p.budget) {
+          recEl.innerHTML = `<span class="text-rose-700 font-bold">Alert:</span> Expenses have exceeded the contract budget by ${this.formatINR(totalSpent - p.budget)}. Submit an Extra Variation Claim (EOT) to the client immediately.`;
+        } else if (totalOutstanding > 100000) {
+          recEl.innerHTML = `High client receivables: <span class="font-bold text-slate-800">${this.formatINR(totalOutstanding)}</span> pending. Expedite RA Bill follow-up before approving further material procurement.`;
+        } else {
+          recEl.innerHTML = `Finances are healthy. Site progress is currently at <strong>${avgProgress}%</strong>. Maintain daily logs for muster roll and inward diesel stock.`;
+        }
+
+        // Update Print Letterhead
+        const printDet = document.getElementById('print-project-details');
+        if (printDet) {
+          printDet.innerHTML = `<strong>Project:</strong> ${p.name} | <strong>Client:</strong> ${p.client} | <strong>Location:</strong> ${p.location} | <strong>Contract:</strong> ${this.formatINR(p.budget)}`;
+        }
+        document.getElementById('print-report-date').textContent = new Date().toLocaleDateString('en-IN', {
+          weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+        });
+
+        // Render Chart.js
+        this.renderCostChart(totalMatCost, totalLabCost, totalExpCost);
+      },
+
+      renderCostChart(matCost, labCost, expCost) {
+        const ctx = document.getElementById('expensesChart');
+        if (!ctx) return;
+
+        if (this.chartInstance) {
+          this.chartInstance.destroy();
+        }
+
+        const isEmpty = (matCost + labCost + expCost) === 0;
+        const dataValues = isEmpty ? [1, 1, 1] : [matCost, labCost, expCost];
+        const bgColors = isEmpty ? ['#e2e8f0', '#cbd5e1', '#94a3b8'] : ['#f59e0b', '#3b82f6', '#10b981'];
+
+        this.chartInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Materials & Inward', 'Labour & Subcontractors', 'Petty Cash & Fuel'],
+            datasets: [{
+              data: dataValues,
+              backgroundColor: bgColors,
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  boxWidth: 12,
+                  font: { family: 'Inter', size: 11, weight: 'bold' },
+                  color: '#475569'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    if (isEmpty) return 'No data recorded yet';
+                    const label = context.label || '';
+                    const val = context.raw || 0;
+                    return ` ${label}: ${app.formatINR(val)}`;
+                  }
+                }
+              }
+            },
+            cutout: '68%'
+          }
+        });
+      },
+
+      renderProjects() {
+        const tbody = document.getElementById('projects-table-body');
+        tbody.innerHTML = '';
+
+        if (this.db.projects.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No projects added yet. Click "+ Add New Project" to get started.</td></tr>`;
+          return;
+        }
+
+        this.db.projects.forEach(p => {
+          const isCurrent = p.id === this.db.activeProjectId;
+          const tr = document.createElement('tr');
+          tr.className = `hover:bg-slate-50/80 transition ${isCurrent ? 'bg-amber-50/40 font-medium' : ''}`;
+          tr.innerHTML = `
+            <td class="p-3.5">
+              <div class="flex items-center gap-2">
+                ${isCurrent ? '<span class="w-2 h-2 rounded-full bg-amber-500"></span>' : ''}
+                <strong class="text-slate-900">${p.name}</strong>
+              </div>
+              <span class="text-[10px] text-slate-400 block">${p.notes || ''}</span>
+            </td>
+            <td class="p-3.5">${p.client}</td>
+            <td class="p-3.5">${p.location}</td>
+            <td class="p-3.5 font-mono font-bold text-slate-800">${this.formatINR(p.budget)}</td>
+            <td class="p-3.5 text-slate-500">${p.startDate || '-'} to ${p.endDate || '-'}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                p.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+              }">${p.status}</span>
+            </td>
+            <td class="p-3.5 text-right no-print space-x-1">
+              ${!isCurrent ? `<button onclick="app.switchProject('${p.id}')" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded font-semibold text-[10px]">Select</button>` : ''}
+              <button onclick="app.editProject('${p.id}')" class="p-1 text-slate-500 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+              <button onclick="app.deleteItem('projects', '${p.id}')" class="p-1 text-slate-500 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      },
+
+      renderMaterials() {
+        const curId = this.db.activeProjectId;
+        const list = this.db.materials.filter(m => m.projectId === curId);
+        const tbody = document.getElementById('materials-table-body');
+        tbody.innerHTML = '';
+
+        let totalVal = 0;
+        let paidVal = 0;
+
+        list.forEach(m => {
+          const tot = Number(m.total) || 0;
+          totalVal += tot;
+          if (m.status === 'Paid') paidVal += tot;
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition';
+          tr.innerHTML = `
+            <td class="p-3.5">
+              <strong class="text-slate-900">${m.name}</strong>
+              <span class="block text-[10px] text-slate-400">${m.category}</span>
+            </td>
+            <td class="p-3.5 font-medium">${m.vendor}</td>
+            <td class="p-3.5 font-mono text-slate-500">${m.bill || '-'}</td>
+            <td class="p-3.5 font-mono">${m.qty} <span class="text-slate-500 text-[10px]">${m.unit}</span></td>
+            <td class="p-3.5 font-mono">${this.formatINR(m.rate)}</td>
+            <td class="p-3.5 font-mono font-bold text-slate-900">${this.formatINR(m.total)}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                m.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
+                m.status === 'Partial' ? 'bg-amber-100 text-amber-800' :
+                'bg-rose-100 text-rose-800'
+              }">${m.status}</span>
+            </td>
+            <td class="p-3.5 text-slate-500">${m.date || '-'}</td>
+            <td class="p-3.5 text-right no-print space-x-1">
+              <button onclick="app.editMaterial('${m.id}')" class="p-1 text-slate-500 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+              <button onclick="app.deleteItem('materials', '${m.id}')" class="p-1 text-slate-500 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">No material orders found for this project.</td></tr>`;
+        }
+
+        document.getElementById('mat-total-count').textContent = list.length;
+        document.getElementById('mat-total-cost').textContent = this.formatINR(totalVal);
+        document.getElementById('mat-paid-cost').textContent = this.formatINR(paidVal);
+        document.getElementById('mat-unpaid-cost').textContent = this.formatINR(totalVal - paidVal);
+      },
+
+      renderLabour() {
+        const curId = this.db.activeProjectId;
+        const list = this.db.labour.filter(l => l.projectId === curId);
+        const tbody = document.getElementById('labour-table-body');
+        tbody.innerHTML = '';
+
+        let totalGross = 0;
+        let totalAdv = 0;
+        let totalNet = 0;
+
+        list.forEach(l => {
+          totalGross += (Number(l.total) || 0);
+          totalAdv += (Number(l.advance) || 0);
+          totalNet += (Number(l.net) || 0);
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition';
+          tr.innerHTML = `
+            <td class="p-3.5">
+              <strong class="text-slate-900">${l.name}</strong>
+              <span class="block text-[10px] text-slate-400">Ending: ${l.date || 'Current'}</span>
+            </td>
+            <td class="p-3.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium">${l.role}</span></td>
+            <td class="p-3.5 font-mono">${this.formatINR(l.rate)}/day</td>
+            <td class="p-3.5 font-mono">${l.days} days</td>
+            <td class="p-3.5 font-mono font-semibold">${this.formatINR(l.total)}</td>
+            <td class="p-3.5 font-mono text-amber-700">${this.formatINR(l.advance)}</td>
+            <td class="p-3.5 font-mono font-bold text-rose-700">${this.formatINR(l.net)}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                l.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              }">${l.status}</span>
+            </td>
+            <td class="p-3.5 text-right no-print space-x-1">
+              <button onclick="app.editLabour('${l.id}')" class="p-1 text-slate-500 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+              <button onclick="app.deleteItem('labour', '${l.id}')" class="p-1 text-slate-500 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">No labour or contractor muster logged yet.</td></tr>`;
+        }
+
+        document.getElementById('labour-total-workers').textContent = list.length;
+        document.getElementById('labour-gross-wages').textContent = this.formatINR(totalGross);
+        document.getElementById('labour-total-advance').textContent = this.formatINR(totalAdv);
+        document.getElementById('labour-net-payable').textContent = this.formatINR(totalNet);
+      },
+
+      renderExpenses() {
+        const curId = this.db.activeProjectId;
+        const list = this.db.expenses.filter(e => e.projectId === curId);
+        const tbody = document.getElementById('expenses-table-body');
+        tbody.innerHTML = '';
+
+        let grandSum = 0;
+        list.forEach(e => {
+          const amt = Number(e.amount) || 0;
+          grandSum += amt;
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition';
+          tr.innerHTML = `
+            <td class="p-3.5 text-slate-500">${e.date || '-'}</td>
+            <td class="p-3.5 font-medium"><span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold">${e.category}</span></td>
+            <td class="p-3.5 text-slate-900">${e.desc}</td>
+            <td class="p-3.5 text-slate-700">${e.paidTo}</td>
+            <td class="p-3.5 text-slate-500 font-mono">${e.mode}</td>
+            <td class="p-3.5 font-mono text-slate-500">${e.voucher || '-'}</td>
+            <td class="p-3.5 font-mono font-bold text-slate-900">${this.formatINR(e.amount)}</td>
+            <td class="p-3.5 text-right no-print space-x-1">
+              <button onclick="app.editExpense('${e.id}')" class="p-1 text-slate-500 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+              <button onclick="app.deleteItem('expenses', '${e.id}')" class="p-1 text-slate-500 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">No site expenses recorded.</td></tr>`;
+        }
+
+        document.getElementById('expense-sum-total').textContent = this.formatINR(grandSum);
+      },
+
+      renderBilling() {
+        const curId = this.db.activeProjectId;
+        const list = this.db.billing.filter(b => b.projectId === curId);
+        const tbody = document.getElementById('billing-table-body');
+        tbody.innerHTML = '';
+
+        let grossSum = 0;
+        let recvSum = 0;
+        let dueSum = 0;
+
+        list.forEach(b => {
+          const g = Number(b.gross) || 0;
+          const r = Number(b.received) || 0;
+          const d = Number(b.balance) || 0;
+          grossSum += g;
+          recvSum += r;
+          dueSum += d;
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition';
+          tr.innerHTML = `
+            <td class="p-3.5">
+              <strong class="text-slate-900">${b.number}</strong>
+              <span class="block text-[10px] text-slate-400">${b.title}</span>
+            </td>
+            <td class="p-3.5 text-slate-500">${b.date || '-'}</td>
+            <td class="p-3.5 font-mono">${this.formatINR(b.basic)}</td>
+            <td class="p-3.5 font-mono">${b.gstRate}%</td>
+            <td class="p-3.5 font-mono text-amber-700">${b.retentionRate}%</td>
+            <td class="p-3.5 font-mono font-bold text-slate-900">${this.formatINR(b.gross)}</td>
+            <td class="p-3.5 font-mono text-emerald-600 font-semibold">${this.formatINR(b.received)}</td>
+            <td class="p-3.5 font-mono font-bold text-rose-600">${this.formatINR(b.balance)}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                b.status === 'Cleared' ? 'bg-emerald-100 text-emerald-800' :
+                b.status === 'Partially Paid' ? 'bg-blue-100 text-blue-800' :
+                'bg-amber-100 text-amber-800'
+              }">${b.status}</span>
+            </td>
+            <td class="p-3.5 text-right no-print space-x-1">
+              <button onclick="app.editBill('${b.id}')" class="p-1 text-slate-500 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+              <button onclick="app.deleteItem('billing', '${b.id}')" class="p-1 text-slate-500 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">No client bills generated for this project yet.</td></tr>`;
+        }
+
+        document.getElementById('bill-total-gross').textContent = this.formatINR(grossSum);
+        document.getElementById('bill-total-received').textContent = this.formatINR(recvSum);
+        document.getElementById('bill-total-due').textContent = this.formatINR(dueSum);
+      },
+
+      renderTasks() {
+        const curId = this.db.activeProjectId;
+        const list = this.db.tasks.filter(t => t.projectId === curId);
+        const container = document.getElementById('tasks-cards-container');
+        container.innerHTML = '';
+
+        if (list.length === 0) {
+          container.innerHTML = `<div class="col-span-2 p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">No construction milestones entered. Click "+ Add Construction Milestone".</div>`;
+          return;
+        }
+
+        list.forEach(t => {
+          const card = document.createElement('div');
+          card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4';
+          card.innerHTML = `
+            <div>
+              <div class="flex justify-between items-start gap-2">
+                <div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                    t.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
+                    t.status === 'Delayed' ? 'bg-rose-100 text-rose-800' :
+                    'bg-amber-100 text-amber-800'
+                  }">${t.status}</span>
+                  <h4 class="font-bold text-slate-900 text-sm mt-1.5">${t.name}</h4>
+                </div>
+                <div class="no-print space-x-1">
+                  <button onclick="app.editTask('${t.id}')" class="p-1 text-slate-400 hover:text-amber-600"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i></button>
+                  <button onclick="app.deleteItem('tasks', '${t.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 mt-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">${t.notes || 'No supervisor notes'}</p>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-slate-500">Target Date: <span class="text-slate-700">${t.date || 'TBD'}</span></span>
+                <span class="font-mono text-amber-600 font-bold">${t.progress}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="bg-amber-500 h-2 rounded-full transition-all duration-300" style="width: ${t.progress}%"></div>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      },
+
+      renderAll() {
+        this.renderDashboard();
+        this.renderProjects();
+        this.renderMaterials();
+        this.renderLabour();
+        this.renderExpenses();
+        this.renderBilling();
+        this.renderTasks();
+        lucide.createIcons();
+      },
+
+      openModal(modalId) {
+        document.getElementById('modal-container').classList.remove('hidden');
+        document.querySelectorAll('.modal-box').forEach(el => el.classList.add('hidden'));
+        document.getElementById(modalId).classList.remove('hidden');
+        lucide.createIcons();
+      },
+
+      closeModal() {
+        document.getElementById('modal-container').classList.add('hidden');
+        document.querySelectorAll('.modal-box').forEach(el => el.classList.add('hidden'));
+      },
+
+      calcMatTotal() {
+        const q = parseFloat(document.getElementById('mat-form-qty').value) || 0;
+        const r = parseFloat(document.getElementById('mat-form-rate').value) || 0;
+        document.getElementById('mat-form-total').value = Math.round(q * r);
+      },
+
+      calcLabourNet() {
+        const rate = parseFloat(document.getElementById('labour-form-rate').value) || 0;
+        const days = parseFloat(document.getElementById('labour-form-days').value) || 0;
+        const adv = parseFloat(document.getElementById('labour-form-advance').value) || 0;
+        const total = Math.round(rate * days);
+        const net = Math.max(0, total - adv);
+        document.getElementById('labour-form-total').value = total;
+        document.getElementById('labour-form-balance').value = net;
+      },
+
+      calcBillNet() {
+        const basic = parseFloat(document.getElementById('bill-form-basic').value) || 0;
+        const gstPct = parseFloat(document.getElementById('bill-form-gst').value) || 0;
+        const retPct = parseFloat(document.getElementById('bill-form-retention').value) || 0;
+        const rec = parseFloat(document.getElementById('bill-form-received').value) || 0;
+
+        const gstAmt = (basic * gstPct) / 100;
+        const retAmt = (basic * retPct) / 100;
+        const netGross = Math.round(basic + gstAmt - retAmt);
+        const due = Math.max(0, netGross - rec);
+
+        document.getElementById('bill-form-gross').value = netGross;
+        document.getElementById('bill-form-balance').value = due;
+      },
+
+      handleSaveProject(e) {
+        e.preventDefault();
+        const id = document.getElementById('proj-form-id').value || 'proj-' + Date.now();
+        const newProj = {
+          id,
+          name: document.getElementById('proj-form-name').value.trim(),
+          client: document.getElementById('proj-form-client').value.trim(),
+          location: document.getElementById('proj-form-location').value.trim(),
+          budget: parseFloat(document.getElementById('proj-form-budget').value) || 0,
+          status: document.getElementById('proj-form-status').value,
+          startDate: document.getElementById('proj-form-start').value,
+          endDate: document.getElementById('proj-form-end').value,
+          notes: document.getElementById('proj-form-notes').value.trim()
+        };
+
+        const idx = this.db.projects.findIndex(p => p.id === id);
+        if (idx >= 0) {
+          this.db.projects[idx] = newProj;
+        } else {
+          this.db.projects.push(newProj);
+          this.db.activeProjectId = id;
+        }
+
+        this.saveToStorage();
+        this.populateProjectDropdown();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Project details successfully saved');
+      },
+
+      editProject(id) {
+        const p = this.db.projects.find(x => x.id === id);
+        if (!p) return;
+        document.getElementById('proj-form-id').value = p.id;
+        document.getElementById('proj-form-name').value = p.name;
+        document.getElementById('proj-form-client').value = p.client;
+        document.getElementById('proj-form-location').value = p.location;
+        document.getElementById('proj-form-budget').value = p.budget;
+        document.getElementById('proj-form-status').value = p.status;
+        document.getElementById('proj-form-start').value = p.startDate || '';
+        document.getElementById('proj-form-end').value = p.endDate || '';
+        document.getElementById('proj-form-notes').value = p.notes || '';
+        document.getElementById('modal-project-title').textContent = 'Edit Project Details';
+        this.openModal('modal-project');
+      },
+
+      handleSaveMaterial(e) {
+        e.preventDefault();
+        const id = document.getElementById('mat-form-id').value || 'mat-' + Date.now();
+        const item = {
+          id,
+          projectId: this.db.activeProjectId,
+          name: document.getElementById('mat-form-name').value.trim(),
+          category: document.getElementById('mat-form-category').value,
+          vendor: document.getElementById('mat-form-vendor').value.trim(),
+          bill: document.getElementById('mat-form-bill').value.trim(),
+          qty: parseFloat(document.getElementById('mat-form-qty').value) || 0,
+          unit: document.getElementById('mat-form-unit').value,
+          rate: parseFloat(document.getElementById('mat-form-rate').value) || 0,
+          total: parseFloat(document.getElementById('mat-form-total').value) || 0,
+          status: document.getElementById('mat-form-status').value,
+          date: document.getElementById('mat-form-date').value || new Date().toISOString().slice(0, 10)
+        };
+
+        const idx = this.db.materials.findIndex(m => m.id === id);
+        if (idx >= 0) this.db.materials[idx] = item;
+        else this.db.materials.push(item);
+
+        this.saveToStorage();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Material order saved');
+      },
+
+      editMaterial(id) {
+        const m = this.db.materials.find(x => x.id === id);
+        if (!m) return;
+        document.getElementById('mat-form-id').value = m.id;
+        document.getElementById('mat-form-name').value = m.name;
+        document.getElementById('mat-form-category').value = m.category;
+        document.getElementById('mat-form-vendor').value = m.vendor;
+        document.getElementById('mat-form-bill').value = m.bill || '';
+        document.getElementById('mat-form-qty').value = m.qty;
+        document.getElementById('mat-form-unit').value = m.unit;
+        document.getElementById('mat-form-rate').value = m.rate;
+        document.getElementById('mat-form-total').value = m.total;
+        document.getElementById('mat-form-status').value = m.status;
+        document.getElementById('mat-form-date').value = m.date || '';
+        document.getElementById('modal-material-title').textContent = 'Edit Material Order';
+        this.openModal('modal-material');
+      },
+
+      handleSaveLabour(e) {
+        e.preventDefault();
+        const id = document.getElementById('labour-form-id').value || 'lab-' + Date.now();
+        const item = {
+          id,
+          projectId: this.db.activeProjectId,
+          name: document.getElementById('labour-form-name').value.trim(),
+          role: document.getElementById('labour-form-role').value,
+          rate: parseFloat(document.getElementById('labour-form-rate').value) || 0,
+          days: parseFloat(document.getElementById('labour-form-days').value) || 0,
+          advance: parseFloat(document.getElementById('labour-form-advance').value) || 0,
+          total: parseFloat(document.getElementById('labour-form-total').value) || 0,
+          net: parseFloat(document.getElementById('labour-form-balance').value) || 0,
+          status: document.getElementById('labour-form-status').value,
+          date: document.getElementById('labour-form-date').value || new Date().toISOString().slice(0, 10)
+        };
+
+        const idx = this.db.labour.findIndex(l => l.id === id);
+        if (idx >= 0) this.db.labour[idx] = item;
+        else this.db.labour.push(item);
+
+        this.saveToStorage();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Labour muster saved');
+      },
+
+      editLabour(id) {
+        const l = this.db.labour.find(x => x.id === id);
+        if (!l) return;
+        document.getElementById('labour-form-id').value = l.id;
+        document.getElementById('labour-form-name').value = l.name;
+        document.getElementById('labour-form-role').value = l.role;
+        document.getElementById('labour-form-rate').value = l.rate;
+        document.getElementById('labour-form-days').value = l.days;
+        document.getElementById('labour-form-advance').value = l.advance;
+        document.getElementById('labour-form-total').value = l.total;
+        document.getElementById('labour-form-balance').value = l.net;
+        document.getElementById('labour-form-status').value = l.status;
+        document.getElementById('labour-form-date').value = l.date || '';
+        document.getElementById('modal-labour-title').textContent = 'Edit Labour Master Entry';
+        this.openModal('modal-labour');
+      },
+
+      handleSaveExpense(e) {
+        e.preventDefault();
+        const id = document.getElementById('exp-form-id').value || 'exp-' + Date.now();
+        const item = {
+          id,
+          projectId: this.db.activeProjectId,
+          category: document.getElementById('exp-form-category').value,
+          amount: parseFloat(document.getElementById('exp-form-amount').value) || 0,
+          desc: document.getElementById('exp-form-desc').value.trim(),
+          paidTo: document.getElementById('exp-form-paidto').value.trim(),
+          mode: document.getElementById('exp-form-mode').value,
+          voucher: document.getElementById('exp-form-voucher').value.trim(),
+          date: document.getElementById('exp-form-date').value || new Date().toISOString().slice(0, 10)
+        };
+
+        const idx = this.db.expenses.findIndex(x => x.id === id);
+        if (idx >= 0) this.db.expenses[idx] = item;
+        else this.db.expenses.push(item);
+
+        this.saveToStorage();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Expense successfully recorded');
+      },
+
+      editExpense(id) {
+        const e = this.db.expenses.find(x => x.id === id);
+        if (!e) return;
+        document.getElementById('exp-form-id').value = e.id;
+        document.getElementById('exp-form-category').value = e.category;
+        document.getElementById('exp-form-amount').value = e.amount;
+        document.getElementById('exp-form-desc').value = e.desc;
+        document.getElementById('exp-form-paidto').value = e.paidTo;
+        document.getElementById('exp-form-mode').value = e.mode;
+        document.getElementById('exp-form-voucher').value = e.voucher || '';
+        document.getElementById('exp-form-date').value = e.date || '';
+        document.getElementById('modal-expense-title').textContent = 'Edit Site Expense';
+        this.openModal('modal-expense');
+      },
+
+      handleSaveBill(e) {
+        e.preventDefault();
+        const id = document.getElementById('bill-form-id').value || 'bill-' + Date.now();
+        const item = {
+          id,
+          projectId: this.db.activeProjectId,
+          number: document.getElementById('bill-form-number').value.trim(),
+          title: document.getElementById('bill-form-title').value.trim(),
+          basic: parseFloat(document.getElementById('bill-form-basic').value) || 0,
+          gstRate: parseFloat(document.getElementById('bill-form-gst').value) || 0,
+          retentionRate: parseFloat(document.getElementById('bill-form-retention').value) || 0,
+          gross: parseFloat(document.getElementById('bill-form-gross').value) || 0,
+          received: parseFloat(document.getElementById('bill-form-received').value) || 0,
+          balance: parseFloat(document.getElementById('bill-form-balance').value) || 0,
+          date: document.getElementById('bill-form-date').value || new Date().toISOString().slice(0, 10),
+          status: document.getElementById('bill-form-status').value
+        };
+
+        const idx = this.db.billing.findIndex(b => b.id === id);
+        if (idx >= 0) this.db.billing[idx] = item;
+        else this.db.billing.push(item);
+
+        this.saveToStorage();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Client RA Bill saved');
+      },
+
+      editBill(id) {
+        const b = this.db.billing.find(x => x.id === id);
+        if (!b) return;
+        document.getElementById('bill-form-id').value = b.id;
+        document.getElementById('bill-form-number').value = b.number;
+        document.getElementById('bill-form-title').value = b.title;
+        document.getElementById('bill-form-basic').value = b.basic;
+        document.getElementById('bill-form-gst').value = b.gstRate;
+        document.getElementById('bill-form-retention').value = b.retentionRate;
+        document.getElementById('bill-form-gross').value = b.gross;
+        document.getElementById('bill-form-received').value = b.received;
+        document.getElementById('bill-form-balance').value = b.balance;
+        document.getElementById('bill-form-date').value = b.date || '';
+        document.getElementById('bill-form-status').value = b.status;
+        document.getElementById('modal-bill-title').textContent = 'Edit Client RA Bill';
+        this.openModal('modal-bill');
+      },
+
+      handleSaveTask(e) {
+        e.preventDefault();
+        const id = document.getElementById('task-form-id').value || 'tsk-' + Date.now();
+        const item = {
+          id,
+          projectId: this.db.activeProjectId,
+          name: document.getElementById('task-form-name').value.trim(),
+          date: document.getElementById('task-form-date').value,
+          status: document.getElementById('task-form-status').value,
+          progress: parseInt(document.getElementById('task-form-pct').value) || 0,
+          notes: document.getElementById('task-form-notes').value.trim()
+        };
+
+        const idx = this.db.tasks.findIndex(t => t.id === id);
+        if (idx >= 0) this.db.tasks[idx] = item;
+        else this.db.tasks.push(item);
+
+        this.saveToStorage();
+        this.renderAll();
+        this.closeModal();
+        this.showToast('Milestone & DPR updated');
+      },
+
+      editTask(id) {
+        const t = this.db.tasks.find(x => x.id === id);
+        if (!t) return;
+        document.getElementById('task-form-id').value = t.id;
+        document.getElementById('task-form-name').value = t.name;
+        document.getElementById('task-form-date').value = t.date || '';
+        document.getElementById('task-form-status').value = t.status;
+        document.getElementById('task-form-pct').value = t.progress;
+        document.getElementById('task-form-slider-val').innerText = t.progress + '%';
+        document.getElementById('task-form-notes').value = t.notes || '';
+        document.getElementById('modal-task-title').textContent = 'Edit Milestone';
+        this.openModal('modal-task');
+      },
+
+      deleteItem(collectionName, id) {
+        // Enforce safe deletion without alert/confirm
+        if (collectionName === 'projects' && this.db.projects.length <= 1) {
+          this.showToast('At least one project must remain in the database', 'error');
+          return;
+        }
+
+        this.db[collectionName] = this.db[collectionName].filter(item => item.id !== id);
+
+        if (collectionName === 'projects' && this.db.activeProjectId === id) {
+          this.db.activeProjectId = this.db.projects[0].id;
+          this.populateProjectDropdown();
+        }
+
+        this.saveToStorage();
+        this.renderAll();
+        this.showToast('Record deleted');
+      },
+
+      // Backup full CRM to user's local drive as JSON file
+      exportDatabaseJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.db, null, 2));
+        const downloadAnchor = document.createElement('a');
+        const filename = `NirmanaPro_CRM_Backup_${new Date().toISOString().slice(0,10)}.json`;
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        this.showToast(`CRM Database saved to drive: ${filename}`);
+      },
+
+      // Import JSON file from user's hard drive
+      importDatabaseJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (imported && Array.isArray(imported.projects)) {
+              this.db = imported;
+              this.saveToStorage();
+              this.populateProjectDropdown();
+              this.renderAll();
+              this.showToast('Database successfully imported from disk!');
+            } else {
+              this.showToast('Invalid Nirmana CRM JSON file structure', 'error');
+            }
+          } catch (err) {
+            this.showToast('Failed to parse the selected file', 'error');
+          }
+        };
+        reader.readAsText(file);
+        // Reset file input
+        event.target.value = '';
+      },
+
+      exportTableToCSV(moduleName) {
+        const p = this.getActiveProject();
+        let csvContent = "data:text/csv;charset=utf-8,";
+        let filename = `${p.name.replace(/[^a-zA-Z0-9]/g, '_')}_${moduleName}_${new Date().toISOString().slice(0,10)}.csv`;
+
+        if (moduleName === 'materials') {
+          csvContent += "ID,Project,Material,Category,Vendor,Bill No,Qty,Unit,Rate (INR),Total (INR),Status,Date\r\n";
+          const rows = this.db.materials.filter(m => m.projectId === p.id);
+          rows.forEach(r => {
+            csvContent += `"${r.id}","${p.name}","${r.name}","${r.category}","${r.vendor}","${r.bill || ''}","${r.qty}","${r.unit}","${r.rate}","${r.total}","${r.status}","${r.date}"\r\n`;
+          });
+        } else if (moduleName === 'labour') {
+          csvContent += "ID,Project,Worker Name,Role,Daily Rate (INR),Days Worked,Gross Wage (INR),Advance Paid (INR),Net Balance (INR),Status,Date\r\n";
+          const rows = this.db.labour.filter(l => l.projectId === p.id);
+          rows.forEach(r => {
+            csvContent += `"${r.id}","${p.name}","${r.name}","${r.role}","${r.rate}","${r.days}","${r.total}","${r.advance}","${r.net}","${r.status}","${r.date}"\r\n`;
+          });
+        } else if (moduleName === 'expenses') {
+          csvContent += "ID,Project,Category,Description,Paid To,Mode,Voucher,Amount (INR),Date\r\n";
+          const rows = this.db.expenses.filter(e => e.projectId === p.id);
+          rows.forEach(r => {
+            csvContent += `"${r.id}","${p.name}","${r.category}","${r.desc}","${r.paidTo}","${r.mode}","${r.voucher || ''}","${r.amount}","${r.date}"\r\n`;
+          });
+        } else if (moduleName === 'billing') {
+          csvContent += "ID,Project,Bill Number,Milestone Title,Basic (INR),GST %,Retention %,Gross (INR),Received (INR),Balance Due (INR),Status,Date\r\n";
+          const rows = this.db.billing.filter(b => b.projectId === p.id);
+          rows.forEach(r => {
+            csvContent += `"${r.id}","${p.name}","${r.number}","${r.title}","${r.basic}","${r.gstRate}","${r.retentionRate}","${r.gross}","${r.received}","${r.balance}","${r.status}","${r.date}"\r\n`;
+          });
+        }
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        this.showToast(`Exported ${moduleName} report as CSV`);
+      },
+
+      resetDemoDataPrompt() {
+        this.db = JSON.parse(JSON.stringify(defaultInitialData));
+        this.saveToStorage();
+        this.populateProjectDropdown();
+        this.renderAll();
+        this.showToast('Sample construction demo data loaded');
+      },
+
+      showToast(msg, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.className = `fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold transition-all duration-300 ease-out ${
+          type === 'error' ? 'bg-rose-900 text-white border-rose-800' : 'bg-slate-900 text-amber-400 border-slate-700'
+        }`;
+        toast.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle-2'}" class="w-4 h-4 mr-1.5"></i> ${msg}`;
+        lucide.createIcons();
+        toast.classList.remove('translate-y-24', 'opacity-0');
+        setTimeout(() => {
+          toast.classList.add('translate-y-24', 'opacity-0');
+        }, 3200);
+      }
+    };
+
+    // Initialize application upon window load
+    window.addEventListener('DOMContentLoaded', () => {
+      app.init();
+    });
+  </script>
+</body>
+</html>
